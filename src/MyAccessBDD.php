@@ -46,6 +46,14 @@ class MyAccessBDD extends AccessBDD {
             case "etat" :
                 // select portant sur une table contenant juste id et libelle
                 return $this->selectTableSimple($table);
+            case "suivi" :
+                return $this->selectTableSimple($table);
+            case "commandedocument" :
+                return $this->selectCommandesDocument($champs);
+            case "abonnement" :
+                return $this->selectAbonnementsRevue($champs);
+            case "abonnementexpire" :
+                return $this->selectAbonnementsExpiration();
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -63,11 +71,15 @@ class MyAccessBDD extends AccessBDD {
      */	
     protected function traitementInsert(string $table, ?array $champs) : ?int{
         switch($table){
+            case "commandedocument" :
+                return $this->insertCommandeDocument($champs);
+            case "abonnement" :
+                return $this->insertAbonnement($champs);
             case "" :
                 // return $this->uneFonction(parametres);
-            default:                    
+            default:
                 // cas général
-                return $this->insertOneTupleOneTable($table, $champs);	
+                return $this->insertOneTupleOneTable($table, $champs);
         }
     }
     
@@ -275,6 +287,71 @@ class MyAccessBDD extends AccessBDD {
         $requete .= "where e.id = :id ";
         $requete .= "order by e.dateAchat DESC";
         return $this->conn->queryBDD($requete, $champNecessaire);
-    }		    
-    
+    }
+
+    private function selectAbonnementsRevue(?array $champs) : ?array {
+        if (empty($champs) || !array_key_exists('idRevue', $champs)) {
+            return null;
+        }
+        $requete  = "SELECT c.id, c.dateCommande, c.montant, a.dateFinAbonnement, a.idRevue ";
+        $requete .= "FROM commande c JOIN abonnement a ON c.id = a.id ";
+        $requete .= "WHERE a.idRevue = :idRevue ORDER BY c.dateCommande DESC";
+        return $this->conn->queryBDD($requete, $champs);
+    }
+
+    private function selectAbonnementsExpiration() : ?array {
+        $requete  = "SELECT c.id, c.dateCommande, c.montant, a.dateFinAbonnement, a.idRevue, d.titre ";
+        $requete .= "FROM commande c JOIN abonnement a ON c.id = a.id ";
+        $requete .= "JOIN document d ON a.idRevue = d.id ";
+        $requete .= "WHERE a.dateFinAbonnement BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) ";
+        $requete .= "ORDER BY a.dateFinAbonnement ASC";
+        return $this->conn->queryBDD($requete);
+    }
+
+    private function insertAbonnement(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $res = $this->conn->queryBDD("SELECT LPAD(COALESCE(MAX(CAST(id AS UNSIGNED)), 0) + 1, 5, '0') as id FROM commande");
+        if ($res === null) {
+            return null;
+        }
+        $newId = $res[0]['id'];
+        $champsCommande = ['id' => $newId, 'dateCommande' => $champs['dateCommande'], 'montant' => $champs['montant']];
+        if ($this->insertOneTupleOneTable('commande', $champsCommande) === null) {
+            return null;
+        }
+        $champsAbo = ['id' => $newId, 'dateFinAbonnement' => $champs['dateFinAbonnement'], 'idRevue' => $champs['idRevue']];
+        return $this->insertOneTupleOneTable('abonnement', $champsAbo);
+    }
+
+    private function selectCommandesDocument(?array $champs) : ?array {
+        if (empty($champs) || !array_key_exists('idLivreDvd', $champs)) {
+            return null;
+        }
+        $requete  = "SELECT c.id, c.dateCommande, c.montant, cd.nbExemplaire, ";
+        $requete .= "cd.idLivreDvd, cd.idSuivi, s.libelle as libelleSuivi ";
+        $requete .= "FROM commande c JOIN commandedocument cd ON c.id = cd.id ";
+        $requete .= "JOIN suivi s ON s.id = cd.idSuivi ";
+        $requete .= "WHERE cd.idLivreDvd = :idLivreDvd ORDER BY c.dateCommande DESC";
+        return $this->conn->queryBDD($requete, $champs);
+    }
+
+    private function insertCommandeDocument(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $res = $this->conn->queryBDD("SELECT LPAD(COALESCE(MAX(CAST(id AS UNSIGNED)), 0) + 1, 5, '0') as id FROM commande");
+        if ($res === null) {
+            return null;
+        }
+        $newId = $res[0]['id'];
+        $champsCommande = ['id' => $newId, 'dateCommande' => $champs['dateCommande'], 'montant' => $champs['montant']];
+        if ($this->insertOneTupleOneTable('commande', $champsCommande) === null) {
+            return null;
+        }
+        $champsDoc = ['id' => $newId, 'nbExemplaire' => $champs['nbExemplaire'], 'idLivreDvd' => $champs['idLivreDvd'], 'idSuivi' => 1];
+        return $this->insertOneTupleOneTable('commandedocument', $champsDoc);
+    }
+
 }
