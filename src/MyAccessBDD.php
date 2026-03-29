@@ -54,6 +54,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->selectAbonnementsRevue($champs);
             case "abonnementexpire" :
                 return $this->selectAbonnementsExpiration();
+            case "utilisateur" :
+                return $this->selectUtilisateur($champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -287,6 +289,16 @@ class MyAccessBDD extends AccessBDD {
         $requete .= "where e.id = :id ";
         $requete .= "order by e.dateAchat DESC";
         return $this->conn->queryBDD($requete, $champNecessaire);
+    }
+
+    private function selectUtilisateur(?array $champs) : ?array {
+        if (empty($champs)) {
+            return null;
+        }
+        $requete  = "SELECT u.id, u.login, u.mdp, u.idService, s.libelle ";
+        $requete .= "FROM utilisateur u JOIN service s ON u.idService = s.id ";
+        $requete .= "WHERE u.login = :login AND u.mdp = :mdp";
+        return $this->conn->queryBDD($requete, $champs);
     }
 
     private function selectAbonnementsRevue(?array $champs) : ?array {
