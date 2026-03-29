@@ -329,11 +329,11 @@ class MyAccessBDD extends AccessBDD {
             return null;
         }
         $newId = $res[0]['id'];
-        $champsCommande = ['id' => $newId, 'dateCommande' => $champs['dateCommande'], 'montant' => $champs['montant']];
+        $champsCommande = ['id' => $newId, 'dateCommande' => $champs['DateCommande'], 'montant' => $champs['Montant']];
         if ($this->insertOneTupleOneTable('commande', $champsCommande) === null) {
             return null;
         }
-        $champsAbo = ['id' => $newId, 'dateFinAbonnement' => $champs['dateFinAbonnement'], 'idRevue' => $champs['idRevue']];
+        $champsAbo = ['id' => $newId, 'dateFinAbonnement' => $champs['DateFinAbonnement'], 'idRevue' => $champs['IdRevue']];
         return $this->insertOneTupleOneTable('abonnement', $champsAbo);
     }
 
@@ -358,11 +358,11 @@ class MyAccessBDD extends AccessBDD {
             return null;
         }
         $newId = $res[0]['id'];
-        $champsCommande = ['id' => $newId, 'dateCommande' => $champs['dateCommande'], 'montant' => $champs['montant']];
+        $champsCommande = ['id' => $newId, 'dateCommande' => $champs['DateCommande'], 'montant' => $champs['Montant']];
         if ($this->insertOneTupleOneTable('commande', $champsCommande) === null) {
             return null;
         }
-        $champsDoc = ['id' => $newId, 'nbExemplaire' => $champs['nbExemplaire'], 'idLivreDvd' => $champs['idLivreDvd'], 'idSuivi' => 1];
+        $champsDoc = ['id' => $newId, 'nbExemplaire' => $champs['NbExemplaire'], 'idLivreDvd' => $champs['IdLivreDvd'], 'idSuivi' => 1];
         return $this->insertOneTupleOneTable('commandedocument', $champsDoc);
     }
 
